@@ -20,6 +20,23 @@ export class UserService {
         }
     }
 
+    public findUserByEmail(email: string): Promise<{ id: number, email: string, password: string } | null> {
+        try {
+            return this.prisma.user.findFirst({
+                where: {
+                    email: email
+                },
+                select: {
+                    id: true,
+                    email: true,
+                    password: true
+                }
+            })
+        } catch (err) {
+            this.logger.error(err)
+            return Promise.resolve(null)
+        }
+    }
     public findUserById(id: number): Promise<UserDTO | null> {
         try {
             return this.prisma.user.findFirst({
@@ -60,7 +77,7 @@ export class UserService {
 
     public async create(data: CreateUserDTO): Promise<UserDTO> {
         try {
-            this.prisma.user.create({
+            return this.prisma.user.create({
                 data: {
                     email: data.email,
                     name: data.name,
