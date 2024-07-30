@@ -74,7 +74,7 @@ export class ConversationService {
 	}
 	public async create(userOneId: number, userTwoId: number): Promise<string> {
 		try {
-			const generateRandomString = function(
+			const generateRandomString = function (
 				length: number = 6,
 				randomString = "",
 			) {
@@ -137,7 +137,7 @@ export class ConversationService {
 		try {
 			const message = await this.prisma.message.create({
 				data: {
-					senderId: data.senderId,
+					senderId: parseInt(data.senderId),
 					message: data.message ?? "",
 					created_at: new Date().toISOString(),
 					conversationId: conversationId,

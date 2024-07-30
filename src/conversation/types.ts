@@ -4,8 +4,8 @@ export type InsertMessageDTO = {
 	message?: string
 	fileUrl?: string
 	fileType?: string
-	senderId: number
-	receiverId: number
+	senderId: string
+	receiverId: string
 }
 
 export type EditMessageDTO = {

@@ -5,7 +5,5 @@ import { ConversationModule } from "./conversation/conversation.module"
 
 @Module({
     imports: [ConfigModule.forRoot(), UserModule, ConversationModule],
-    controllers: [],
-    providers: [],
 })
 export class AppModule { }

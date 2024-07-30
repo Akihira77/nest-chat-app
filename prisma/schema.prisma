@@ -22,6 +22,8 @@ model User {
   created_at DateTime
   userOne Conversation[] @relation("user_one")
   userTwo Conversation[] @relation("user_two")
+
+  sender Message[] @relation("sender")
 }
 
 model Conversation {
@@ -37,6 +39,8 @@ model Conversation {
 
 model Message {
   id Int @default(autoincrement()) @id
+  senderId Int
+  sender User @relation(name: "sender", fields: [senderId], references: [id])
   message String
   edited Boolean @default(false)
   unread Boolean @default(true)

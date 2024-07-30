@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -9,15 +10,21 @@ import {
 	Put,
 	Query,
 	Res,
+	UploadedFile,
+	UseInterceptors,
 } from "@nestjs/common"
 import { ConversationService } from "./conversation.service"
 import { Response } from "express"
 import { EditMessageDTO, InsertMessageDTO } from "./types"
 import typia from "typia"
+import { uws } from "src/main"
+import { FileInterceptor } from "@nestjs/platform-express"
+import * as fs from "fs"
+import * as path from "path"
 
 @Controller("conversation")
 export class ConversationController {
-	constructor(private readonly conversationSvc: ConversationService) { }
+	constructor(private readonly conversationSvc: ConversationService) {}
 
 	@Get(":userId")
 	public async findConversations(
@@ -61,7 +68,34 @@ export class ConversationController {
 	}
 
 	@Post("chat")
+	@UseInterceptors(
+		FileInterceptor("file", {
+			limits: {
+				fileSize: 5 * 1024 * 1024,
+			},
+			fileFilter: (
+				_req: Request,
+				file: Express.Multer.File,
+				callback: (error: Error | null, acceptFile: boolean) => void,
+			) => {
+				const allowedTypes = [
+					"image/webp",
+					"image/jpeg",
+					"image/png",
+					"application/pdf",
+				] // Tipe file yang diperbolehkan
+				if (!allowedTypes.includes(file.mimetype)) {
+					return callback(
+						new BadRequestException("file type is invalid"),
+						false,
+					)
+				}
+				callback(null, true)
+			},
+		}),
+	)
 	public async chatting(
+		@UploadedFile() file: Express.Multer.File,
 		@Body() data: InsertMessageDTO,
 		@Res() res: Response,
 	): Promise<Response> {
@@ -69,24 +103,31 @@ export class ConversationController {
 			const validationResult =
 				typia.validateEquals<InsertMessageDTO>(data)
 			if (!validationResult.success) {
-				return res
-					.status(HttpStatus.BAD_REQUEST)
-					.json({
-						msg: `Field ${validationResult.errors[0]?.path} with value ${validationResult.errors[0]?.value} is invalid`,
-					})
+				return res.status(HttpStatus.BAD_REQUEST).json({
+					msg: `Field ${validationResult.errors[0]?.path} with value ${validationResult.errors[0]?.value} is invalid`,
+				})
+			}
+
+			const uploadDir = "./assets"
+			data.fileUrl = `${Date.now()}-${file.originalname}`
+			const filePath = path.join(uploadDir, data.fileUrl)
+			data.fileType = file.mimetype
+
+			if (!fs.existsSync(uploadDir)) {
+				fs.mkdirSync(uploadDir, { recursive: true })
 			}
 
 			const hasChattedBefore =
 				await this.conversationSvc.findConversation(
-					data.senderId,
-					data.receiverId,
+					parseInt(data.senderId),
+					parseInt(data.receiverId),
 				)
 			let conversationId = hasChattedBefore?.id
 
 			if (!conversationId) {
 				conversationId = await this.conversationSvc.create(
-					data.senderId,
-					data.receiverId,
+					parseInt(data.senderId),
+					parseInt(data.receiverId),
 				)
 			}
 
@@ -95,11 +136,22 @@ export class ConversationController {
 				data,
 			)
 
+			await fs.promises.writeFile(filePath, file.buffer)
+			uws.publish(
+				validationResult.data.receiverId.toString(),
+				typia.json.stringify({
+					senderId: validationResult.data.senderId,
+					message: validationResult.data.message,
+					fileUrl: data?.fileUrl,
+					fileType: data?.fileType,
+				}),
+			)
 			return res.status(HttpStatus.CREATED).json({ msg: result })
 		} catch (err) {
-			return res
-				.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.json({ msg: "Oops. There is an error, please try again" })
+			console.log(err)
+			return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+				msg: "Oops. There is an error, please try again",
+			})
 		}
 	}
 
@@ -112,11 +164,9 @@ export class ConversationController {
 		try {
 			const validationResult = typia.validateEquals<EditMessageDTO>(data)
 			if (!validationResult.success) {
-				return res
-					.status(HttpStatus.BAD_REQUEST)
-					.json({
-						msg: `Field ${validationResult.errors[0]?.path} with value ${validationResult.errors[0]?.value} is invalid`,
-					})
+				return res.status(HttpStatus.BAD_REQUEST).json({
+					msg: `Field ${validationResult.errors[0]?.path} with value ${validationResult.errors[0]?.value} is invalid`,
+				})
 			}
 
 			const result = await this.conversationSvc.editMessage(
