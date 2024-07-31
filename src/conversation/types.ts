@@ -3,6 +3,8 @@ import { Message } from "@prisma/client"
 export type InsertMessageDTO = {
 	message?: string
 	fileUrl?: string
+	fileName?: string
+	filePublicId?: string
 	fileType?: string
 	senderId: string
 	receiverId: string

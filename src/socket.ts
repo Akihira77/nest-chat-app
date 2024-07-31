@@ -17,9 +17,6 @@ export function startuWS(): TemplatedApp {
 				console.log("A client connected to chat socket server", ws)
 			},
 			message: (ws: WebSocket<unknown>, message: ArrayBuffer) => {
-				/* Parse this message according to some application
-				 * protocol such as JSON [action, topic, message] */
-				//
 				type Message = {
 					action: string
 					senderId: number
@@ -53,9 +50,6 @@ export function startuWS(): TemplatedApp {
 
 						ws.send("success sending your message")
 					} else if (validationResult.data.action === "subscribe") {
-						console.log(
-							`client subscribing topic: ${validationResult.data.senderId}`,
-						)
 						ws.subscribe(validationResult.data.senderId!.toString())
 						ws.send(
 							`you subscribing topic ${validationResult.data.senderId}`,

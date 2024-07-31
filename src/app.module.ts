@@ -4,6 +4,6 @@ import { UserModule } from "./user/user.module"
 import { ConversationModule } from "./conversation/conversation.module"
 
 @Module({
-    imports: [ConfigModule.forRoot(), UserModule, ConversationModule],
+	imports: [ConfigModule.forRoot(), UserModule, ConversationModule],
 })
-export class AppModule { }
+export class AppModule {}

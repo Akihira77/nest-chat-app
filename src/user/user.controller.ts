@@ -15,7 +15,7 @@ import { jwtSign } from "src/utils"
 
 @Controller("user")
 export class UserController {
-	constructor(private readonly userSvc: UserService) { }
+	constructor(private readonly userSvc: UserService) {}
 
 	@Get()
 	public async findAll(@Res() res: Response): Promise<Response> {
@@ -52,7 +52,6 @@ export class UserController {
 		}
 	}
 
-
 	@Post("register")
 	public async register(
 		@Body() data: CreateUserDTO,
@@ -61,16 +60,16 @@ export class UserController {
 		try {
 			const validationResult = typia.validateEquals<CreateUserDTO>(data)
 			if (!validationResult.success) {
-				return res.status(HttpStatus.BAD_REQUEST).json(
-					{
-						msg: `Field ${validationResult.errors[0]?.path} with value ${validationResult.errors[0]?.value} is invalid`,
-					}
-				)
+				return res.status(HttpStatus.BAD_REQUEST).json({
+					msg: `Field ${validationResult.errors[0]?.path} with value ${validationResult.errors[0]?.value} is invalid`,
+				})
 			}
 
 			const user = await this.userSvc.create(data)
 
-			return res.status(HttpStatus.CREATED).json({ token: jwtSign(user.id, user.email), user })
+			return res
+				.status(HttpStatus.CREATED)
+				.json({ token: jwtSign(user.id, user.name, user.email), user })
 		} catch (err) {
 			return res
 				.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -86,11 +85,9 @@ export class UserController {
 		try {
 			const validationResult = typia.validateEquals<LoginDTO>(data)
 			if (!validationResult.success) {
-				return res.status(HttpStatus.BAD_REQUEST).json(
-					{
-						msg: `Field ${validationResult.errors[0]?.path} with value ${validationResult.errors[0]?.value} is invalid`,
-					}
-				)
+				return res.status(HttpStatus.BAD_REQUEST).json({
+					msg: `Field ${validationResult.errors[0]?.path} with value ${validationResult.errors[0]?.value} is invalid`,
+				})
 			}
 
 			let user = await this.userSvc.findUserByEmail(data.email)
@@ -100,13 +97,23 @@ export class UserController {
 					.json({ msg: "user is not found" })
 			}
 
-			const isValidPassword = await this.userSvc.login(data, user.password!)
+			const isValidPassword = await this.userSvc.login(
+				data,
+				user.password!,
+			)
 
 			if (!isValidPassword) {
-				return res.status(HttpStatus.BAD_REQUEST).json({ msg: "Password is incorrect" })
+				return res
+					.status(HttpStatus.BAD_REQUEST)
+					.json({ msg: "Password is incorrect" })
 			}
 
-			return res.status(HttpStatus.OK).json({ token: jwtSign(user!.id, user!.email), user })
+			return res
+				.status(HttpStatus.OK)
+				.json({
+					token: jwtSign(user!.id, user!.name, user!.email),
+					user,
+				})
 		} catch (err) {
 			return res
 				.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -24,6 +24,7 @@ model User {
   userTwo Conversation[] @relation("user_two")
 
   sender Message[] @relation("sender")
+  receiver Message[] @relation("receiver")
 }
 
 model Conversation {
@@ -41,10 +42,14 @@ model Message {
   id Int @default(autoincrement()) @id
   senderId Int
   sender User @relation(name: "sender", fields: [senderId], references: [id])
+  receiverId Int
+  receiver User @relation(name: "receiver", fields: [receiverId], references: [id])
   message String
   edited Boolean @default(false)
   unread Boolean @default(true)
   fileUrl String?
+  filePublicId String?
+  fileName String?
   fileType String?
   created_at DateTime
   conversationId String

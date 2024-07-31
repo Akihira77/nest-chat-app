@@ -10,6 +10,39 @@ export class ConversationService {
 		this.logger = new Logger(ConversationService.name)
 	}
 
+	public async validateUserMessage(
+		senderId: number,
+		messageId: number,
+	): Promise<Message | null> {
+		try {
+			return this.prisma.message.findFirst({
+				where: {
+					senderId: senderId,
+					id: messageId,
+				},
+			})
+		} catch (err) {
+			console.log(err)
+			return null
+		}
+	}
+
+	public async findMessage(
+		conversationId: string,
+		messageId: number,
+	): Promise<Message | null> {
+		try {
+			return this.prisma.message.findFirst({
+				where: {
+					conversationId: conversationId,
+					id: messageId,
+				},
+			})
+		} catch (err) {
+			console.log(err)
+			return null
+		}
+	}
 	public async findConversation(
 		userOneId: number,
 		userTwoId: number,
@@ -108,7 +141,8 @@ export class ConversationService {
 				where: {
 					id: conversationId,
 				},
-				include: {
+				select: {
+					id: true,
 					userOne: {
 						select: {
 							id: true,
@@ -123,6 +157,21 @@ export class ConversationService {
 					},
 					messages: true,
 				},
+				// include: {
+				// 	userOne: {
+				// 		select: {
+				// 			id: true,
+				// 			name: true,
+				// 		},
+				// 	},
+				// 	userTwo: {
+				// 		select: {
+				// 			id: true,
+				// 			name: true,
+				// 		},
+				// 	},
+				// 	messages: true,
+				// },
 			})
 		} catch (err) {
 			this.logger.error(err)
@@ -138,12 +187,15 @@ export class ConversationService {
 			const message = await this.prisma.message.create({
 				data: {
 					senderId: parseInt(data.senderId),
+					receiverId: parseInt(data.receiverId),
 					message: data.message ?? "",
 					created_at: new Date().toISOString(),
 					conversationId: conversationId,
 					edited: false,
 					unread: true,
 					fileUrl: data.fileUrl ?? "",
+					fileName: data.fileName ?? "",
+					filePublicId: data.filePublicId ?? "",
 					fileType: data.fileType ?? "",
 				},
 			})
@@ -201,11 +253,15 @@ export class ConversationService {
 		}
 	}
 
-	public async removeMessage(id: number): Promise<boolean> {
+	public async removeMessage(
+		conversationId: string,
+		messageId: number,
+	): Promise<boolean> {
 		try {
 			const result = await this.prisma.message.delete({
 				where: {
-					id: id,
+					id: messageId,
+					conversationId: conversationId,
 				},
 			})
 
