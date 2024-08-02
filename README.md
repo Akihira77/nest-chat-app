@@ -71,5 +71,7 @@ model Message {
    &nbsp;&nbsp; &nbsp; conversation Conversation @relation(name: "chat", fields: [conversationId], references: [id], onDelete: Cascade)  
 }
 
-## Endpoint
-You can use my Postman collection to test this API. I have two Postman collection one for API endpoint and another one is for WebSocket listener.
+## Test
+You can use my Postman collection to test this API endpoints and you need to
+create WebSocket request collection to see how data from sender being sent to
+receiver.

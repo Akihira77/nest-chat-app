@@ -1,0 +1,391 @@
+{
+	"info": {
+		"_postman_id": "d6aba67a-4f6c-4f28-919a-f770e0b62136",
+		"name": "NestJS Realtime Chat",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "24368336"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Find Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{API_URI}}/user"
+					},
+					"response": []
+				},
+				{
+					"name": "Find User By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_URI}}/user/:id",
+							"host": [
+								"{{API_URI}}"
+							],
+							"path": [
+								"user",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Signup",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"name\": \"Diki Fernandi\",\r\n\t\"email\": \"dikawah1@mail.com\",\r\n\t\"avatar\": \"https://picsum.photos/200/300\",\r\n\t\"password\": \"dikawah1\"\t\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{API_URI}}/user/register"
+					},
+					"response": []
+				},
+				{
+					"name": "Signin",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"email\": \"dikawah1@mail.com\",\r\n\t\"password\": \"dikawah1\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{API_URI}}/user/login"
+					},
+					"response": []
+				},
+				{
+					"name": "Edit Account",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsIm5hbWUiOiJEaWtpIFdhaHl1IiwiZW1haWwiOiJkaWthd2FoMUBtYWlsLmNvbSIsImlhdCI6MTcyMjQ5NjA4MywiZXhwIjoxNzIyNDk5NjgzfQ.KFy4XsRCJB4yo7sfIyKdIvx21D3U7Ck5Kp2Z018z4wA"
+							}
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"name\" : \"Dika Wahyu\",\r\n\t\"avatar\" : \"https://picsum.photos/200/300\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_URI}}/user/:userId",
+							"host": [
+								"{{API_URI}}"
+							],
+							"path": [
+								"user",
+								":userId"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "2"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete My Account",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjExLCJuYW1lIjoiRGlraSBGZXJuYW5kaSIsImVtYWlsIjoiZGlrYXdhaDFAbWFpbC5jb20iLCJpYXQiOjE3MjI1NzczNDQsImV4cCI6MTcyMjU4MDk0NH0.KtzTAStcSr3Hb-eZ0rvOpkBnke071GzygXJPxguQb5Q"
+							}
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{API_URI}}/user/:userId",
+							"host": [
+								"{{API_URI}}"
+							],
+							"path": [
+								"user",
+								":userId"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "11"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Chat",
+			"item": [
+				{
+					"name": "Find My Conversations",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsIm5hbWUiOiJEaWthIFdhaHl1IiwiZW1haWwiOiJkaWthd2FoMUBtYWlsLmNvbSIsImlhdCI6MTcyMjU0Mzc1NCwiZXhwIjoxNzIyNTQ3MzU0fQ.K7355afuE9rmgHdLLGYKxYKkwFaqUfEX8QCFv9tfhRU"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": "http://localhost:8080/api/conversation/user"
+					},
+					"response": []
+				},
+				{
+					"name": "Chat",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEwLCJuYW1lIjoiRGlraSBGZXJuYW5kaSIsImVtYWlsIjoiZGlraWZlcjFAbWFpbC5jb20iLCJpYXQiOjE3MjI1NDY5NTIsImV4cCI6MTcyMjU1MDU1Mn0.-7XnQtr4Cpyq0yeIhX_KddGg4zYQgQpYVR-L-KemI50"
+							}
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "senderId",
+									"value": "10",
+									"type": "text"
+								},
+								{
+									"key": "receiverId",
+									"value": "11",
+									"type": "text"
+								},
+								{
+									"key": "message",
+									"value": "just another text",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/F:/File_Mahasiswa/File/pictures/beautiful-moon.jpeg"
+								}
+							]
+						},
+						"url": "http://localhost:8080/api/conversation/chat"
+					},
+					"response": []
+				},
+				{
+					"name": "Find My Unread Messages",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsIm5hbWUiOiJEaWtpIEZlcm5hbmRpIiwiZW1haWwiOiJkaWtpZmVyMUBtYWlsLmNvbSIsImlhdCI6MTcyMjQwOTE2NCwiZXhwIjoxNzIyNDEyNzY0fQ.F8ZisB-PVZXb_5Ml7uIdfLF6Bc_rWJOCA1e4s8zKA5k"
+							}
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/conversation/:conversationId",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"conversation",
+								":conversationId"
+							],
+							"variable": [
+								{
+									"key": "conversationId",
+									"value": "xce4jr6wtq9hx2e4kyjtbwe1oh5lewmv"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Messages As Read",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/conversation/mark-messages-as-read/:conversationId/:senderId",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"conversation",
+								"mark-messages-as-read",
+								":conversationId",
+								":senderId"
+							],
+							"variable": [
+								{
+									"key": "conversationId",
+									"value": "xce4jr6wtq9hx2e4kyjtbwe1oh5lewmv"
+								},
+								{
+									"key": "senderId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit My Message",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsIm5hbWUiOiJEaWtpIEZlcm5hbmRpIiwiZW1haWwiOiJkaWtpZmVyMUBtYWlsLmNvbSIsImlhdCI6MTcyMjQxMzQ2MywiZXhwIjoxNzIyNDE3MDYzfQ.egQf0yny6yb2z7VWfYb2k7JqTTNaQqQqcbDojZW_oY0"
+							}
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"message\": \"Hi bang\",\r\n\t\"senderId\": 1,\r\n\t\"receiverId\": 2\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/conversation?conversationId=xce4jr6wtq9hx2e4kyjtbwe1oh5lewmv&messageId=1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"conversation"
+							],
+							"query": [
+								{
+									"key": "conversationId",
+									"value": "xce4jr6wtq9hx2e4kyjtbwe1oh5lewmv"
+								},
+								{
+									"key": "messageId",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete My Message",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": {
+								"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsIm5hbWUiOiJEaWtpIEZlcm5hbmRpIiwiZW1haWwiOiJkaWtpZmVyMUBtYWlsLmNvbSIsImlhdCI6MTcyMjQzMTk2NCwiZXhwIjoxNzIyNDM1NTY0fQ.RsVvD5pYkkU0DzrsHv8x5RsyPR9jQIBhqrvbw5iCJNQ"
+							}
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/conversation/:conversationId/:messageId",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"conversation",
+								":conversationId",
+								":messageId"
+							],
+							"variable": [
+								{
+									"key": "conversationId",
+									"value": "xce4jr6wtq9hx2e4kyjtbwe1oh5lewmv"
+								},
+								{
+									"key": "messageId",
+									"value": "7"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "API_URI",
+			"value": "http://localhost:8080/api",
+			"type": "string"
+		}
+	]
+}
