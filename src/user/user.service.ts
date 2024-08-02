@@ -1,8 +1,9 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { User } from "@prisma/client"
 import { PrismaService } from "src/store/prisma.service"
-import { CreateUserDTO, LoginDTO, UserDTO } from "./types"
+import { CreateUserDTO, EditUserDTO, LoginDTO, UserDTO } from "./types"
 import * as bcrypt from "bcrypt"
+import { v2 as cloudinary } from "cloudinary"
 
 @Injectable()
 export class UserService {
@@ -20,9 +21,7 @@ export class UserService {
 		}
 	}
 
-	public findUserByEmail(
-		email: string,
-	): Promise<{
+	public findUserByEmail(email: string): Promise<{
 		id: number
 		name: string
 		email: string
@@ -121,6 +120,79 @@ export class UserService {
 					email: data.email,
 				},
 			})
+		} catch (err) {
+			this.logger.error(err)
+			throw err
+		}
+	}
+
+	public async edit(userId: number, data: EditUserDTO): Promise<User | null> {
+		try {
+			return await this.prisma.user.update({
+				where: {
+					id: userId,
+				},
+				data: {
+					name: data.name,
+					avatar: data.avatar,
+				},
+			})
+		} catch (err) {
+			this.logger.error(err)
+			throw err
+		}
+	}
+
+	public async changePassword(
+		userId: number,
+		newPassword: string,
+	): Promise<User | null> {
+		try {
+			return await this.prisma.user.update({
+				where: {
+					id: userId,
+				},
+				data: {
+					password: await this.hash(newPassword),
+				},
+			})
+		} catch (err) {
+			this.logger.error(err)
+			throw err
+		}
+	}
+
+	public async delete(userId: number): Promise<boolean> {
+		try {
+			const messages = await this.prisma.message.findMany({
+				where: {
+					OR: [
+						{
+							senderId: userId,
+						},
+						{
+							receiverId: userId,
+						},
+					],
+				},
+				select: {
+					filePublicId: true,
+				},
+			})
+			messages.forEach((message) => {
+				if (message.filePublicId) {
+					cloudinary.uploader.destroy(message.filePublicId, {
+						invalidate: true,
+					})
+				}
+			})
+			return (
+				(await this.prisma.user.delete({
+					where: {
+						id: userId,
+					},
+				})) !== null
+			)
 		} catch (err) {
 			this.logger.error(err)
 			throw err

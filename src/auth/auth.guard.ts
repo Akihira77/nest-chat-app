@@ -12,13 +12,17 @@ export class AuthGuard implements CanActivate {
 	constructor(private readonly authService: AuthService) {}
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		try {
-			const request = context.switchToHttp().getRequest()
+			const request = context.switchToHttp().getRequest<any>()
 			const { authorization } = request.headers
 			if (!authorization || authorization.trim() === "") {
 				throw new UnauthorizedException("Please provide token")
 			}
 
 			const authToken = authorization.split(" ")[1]
+			if (!authToken) {
+				throw new UnauthorizedException("Please provide token")
+			}
+
 			const resp = this.authService.validateToken(authToken)
 			request.user = resp
 			return true
