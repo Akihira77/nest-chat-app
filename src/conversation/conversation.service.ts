@@ -105,7 +105,10 @@ export class ConversationService {
 			return []
 		}
 	}
-	public async create(userOneId: number, userTwoId: number): Promise<string> {
+	public async createConversation(
+		userOneId: number,
+		userTwoId: number,
+	): Promise<string> {
 		try {
 			const generateRandomString = function (
 				length: number = 6,
@@ -135,11 +138,31 @@ export class ConversationService {
 		}
 	}
 
-	public findMessages(conversationId: string): Promise<MessageDTO | null> {
+	public findMessages(
+		conversationId: string | null,
+		userId: number | null,
+	): Promise<MessageDTO | null> {
 		try {
+			let condition: any[] = []
+			if (conversationId) {
+				condition.push({
+					id: conversationId,
+				})
+			}
+
+			if (userId) {
+				condition.push(
+					{
+						userOneId: userId,
+					},
+					{
+						userTwoId: userId,
+					},
+				)
+			}
 			return this.prisma.conversation.findFirst({
 				where: {
-					id: conversationId,
+					OR: condition,
 				},
 				select: {
 					id: true,
@@ -179,7 +202,7 @@ export class ConversationService {
 		}
 	}
 
-	public async insertMessage(
+	public async insert(
 		conversationId: string,
 		data: InsertMessageDTO,
 	): Promise<Message> {
@@ -207,7 +230,7 @@ export class ConversationService {
 		}
 	}
 
-	public async editMessage(
+	public async edit(
 		conversationId: string,
 		messageId: number,
 		data: EditMessageDTO,

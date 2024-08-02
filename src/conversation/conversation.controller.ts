@@ -6,28 +6,33 @@ import {
 	ForbiddenException,
 	Get,
 	HttpStatus,
+	InternalServerErrorException,
 	Logger,
 	NotFoundException,
 	Param,
 	Post,
 	Put,
 	Query,
+	Req,
 	Res,
 	UploadedFile,
 	UseGuards,
 	UseInterceptors,
 } from "@nestjs/common"
 import { ConversationService } from "./conversation.service"
-import { Response } from "express"
+import { Request, Response } from "express"
 import { EditMessageDTO, InsertMessageDTO } from "./types"
 import typia from "typia"
 import { uws } from "src/main"
 import { FileInterceptor } from "@nestjs/platform-express"
-import { v2 } from "cloudinary"
-import * as fs from "fs"
-import * as path from "path"
+import {
+	v2 as cloudinary,
+	UploadApiErrorResponse,
+	UploadApiResponse,
+} from "cloudinary"
 import { AuthGuard } from "src/auth/auth.guard"
 import { UserService } from "src/user/user.service"
+import { Readable } from "stream"
 
 @Controller("conversation")
 @UseGuards(AuthGuard)
@@ -40,14 +45,14 @@ export class ConversationController {
 		this.logger = new Logger(ConversationController.name)
 	}
 
-	@Get("user/:userId")
+	@Get("user")
 	public async findConversations(
-		@Param("userId") userId: string,
+		@Req() req: Request,
 		@Res() res: Response,
 	): Promise<Response> {
 		try {
 			const conversations = await this.conversationSvc.findConversations(
-				parseInt(userId),
+				req.user.userId,
 			)
 
 			return res.status(HttpStatus.OK).json({ conversations })
@@ -64,8 +69,10 @@ export class ConversationController {
 		@Res() res: Response,
 	): Promise<Response> {
 		try {
-			const messages =
-				await this.conversationSvc.findMessages(conversationId)
+			const messages = await this.conversationSvc.findMessages(
+				conversationId,
+				null,
+			)
 
 			if (!messages) {
 				return res
@@ -109,6 +116,7 @@ export class ConversationController {
 		}),
 	)
 	public async chatting(
+		@Req() req: Request,
 		@UploadedFile() file: Express.Multer.File,
 		@Body() data: InsertMessageDTO,
 		@Res() res: Response,
@@ -124,52 +132,58 @@ export class ConversationController {
 
 			const hasChattedBefore =
 				await this.conversationSvc.findConversation(
-					parseInt(data.senderId),
+					req.user.userId,
 					parseInt(data.receiverId),
 				)
 			let conversationId = hasChattedBefore?.id
 
 			if (!conversationId) {
-				conversationId = await this.conversationSvc.create(
-					parseInt(data.senderId),
+				conversationId = await this.conversationSvc.createConversation(
+					req.user.userId,
 					parseInt(data.receiverId),
 				)
 			}
 
 			if (file) {
-				const uploadDir = "./uploads"
-				if (!fs.existsSync(uploadDir)) {
-					fs.mkdirSync(uploadDir, { recursive: true })
-				}
-				const fileName = `${Date.now()}-${file.originalname}`
-				const filePath = path.join(uploadDir, fileName)
-				await fs.promises.writeFile(filePath, file.buffer)
+				async function uploadStream(
+					buffer: Buffer,
+				): Promise<UploadApiResponse | UploadApiErrorResponse> {
+					return new Promise<
+						UploadApiResponse | UploadApiErrorResponse
+					>((res, rej) => {
+						const theTransformStream =
+							cloudinary.uploader.upload_stream(
+								{
+									folder: "uploads",
+								},
+								(
+									err: UploadApiErrorResponse,
+									result: UploadApiResponse,
+								) => {
+									if (err) return rej(err)
+									res(result)
+								},
+							)
 
-				const result = await v2.uploader.upload(filePath, {
-					resource_type: "auto",
-					eager: [
-						{ fetch_format: "avif", format: "" },
-						{ fetch_format: "jp2", format: "" },
-						{
-							fetch_format: "webp",
-							flags: "awebp",
-							format: "",
-						},
-					],
-					use_asset_folder_as_public_id_prefix: true,
-				})
-
-				if (!result?.public_id) {
-					throw new Error("File upload error. Try again.")
+						Readable.from(buffer).pipe(theTransformStream)
+					})
 				}
 
-				data.filePublicId = result.public_id
-				data.fileName = fileName
-				data.fileUrl = result.secure_url
-				data.fileType = result.type
+				const uploadResult = await uploadStream(file.buffer)
+				if (!uploadResult.public_id) {
+					throw new InternalServerErrorException(
+						"File upload error. Try again.",
+					)
+				}
+
+				data.filePublicId = uploadResult.public_id
+				data.fileName = `${Date.now()}-${file.originalname}`
+				data.fileUrl = uploadResult.secure_url
+				data.fileType = uploadResult.format
 			}
 
-			const result = await this.conversationSvc.insertMessage(
+			data.senderId = req.user.userId.toString()
+			const result = await this.conversationSvc.insert(
 				conversationId,
 				data,
 			)
@@ -178,7 +192,7 @@ export class ConversationController {
 				validationResult.data.receiverId.toString(),
 				typia.json.stringify({
 					action: "added",
-					senderId: validationResult.data.senderId,
+					senderId: req.user.userId,
 					message: validationResult.data.message,
 					fileUrl: data?.fileUrl,
 					fileType: data?.fileType,
@@ -195,6 +209,7 @@ export class ConversationController {
 
 	@Put()
 	public async editMessage(
+		@Req() req: Request,
 		@Query() query: { conversationId: string; messageId: string },
 		@Body() data: EditMessageDTO,
 		@Res() res: Response,
@@ -206,21 +221,21 @@ export class ConversationController {
 					msg: `Field ${validationResult.errors[0]?.path} with value ${validationResult.errors[0]?.value} is invalid`,
 				})
 			}
-			const isValidUser = await this.userSvc.findUserById(data.senderId)
+			const isValidUser = await this.userSvc.findUserById(req.user.userId)
 			if (!isValidUser) {
 				throw new NotFoundException("user did not found")
 			}
 
 			const isUserHasThisMessage =
 				await this.conversationSvc.validateUserMessage(
-					data.senderId,
+					req.user.userId,
 					parseInt(query.messageId),
 				)
 			if (!isUserHasThisMessage) {
 				throw new ForbiddenException("you can't edit this message")
 			}
 
-			const result = await this.conversationSvc.editMessage(
+			const result = await this.conversationSvc.edit(
 				query.conversationId,
 				parseInt(query.messageId),
 				data,
@@ -230,7 +245,7 @@ export class ConversationController {
 				data.receiverId.toString(),
 				typia.json.stringify({
 					action: "edited",
-					senderId: data.senderId,
+					senderId: req.user.userId,
 					messageId: result.id,
 				}),
 			)
@@ -249,13 +264,14 @@ export class ConversationController {
 
 	@Put("/mark-messages-as-read/:conversationId/:senderId")
 	public async markMessagesAsRead(
-		@Param() params: { conversationId: string; senderId: string },
+		@Req() req: Request,
+		@Param() params: { conversationId: string },
 		@Res() res: Response,
 	): Promise<Response> {
 		try {
 			await this.conversationSvc.markMessagesAsRead(
 				params.conversationId,
-				parseInt(params.senderId),
+				req.user.userId,
 			)
 
 			return res.sendStatus(HttpStatus.OK)
@@ -285,19 +301,8 @@ export class ConversationController {
 				throw new NotFoundException("message did not found")
 			}
 
-			if (message.fileName) {
-				const fileDir = "./uploads"
-				if (!fs.existsSync(fileDir)) {
-					fs.mkdirSync(fileDir, { recursive: true })
-				}
-				const filePath = path.join(fileDir, message.fileName)
-				fs.rm(filePath, (err: Error | null) => {
-					if (err) {
-						return err
-					}
-				})
-
-				v2.uploader.destroy(message.filePublicId!, {
+			if (message.filePublicId) {
+				cloudinary.uploader.destroy(message.filePublicId, {
 					invalidate: true,
 				})
 			}

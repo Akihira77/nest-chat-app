@@ -1,73 +1,75 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Nest Chat API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Overview
+This is a Nest API project with feature like:  
+- CRUD user's account & change password
+- CRUD message  
+&nbsp; - User can sending file (image, pdf) just for CREATE message feature
+- Authentication with JWT
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack
+- Typescript
+- NestJS
+- uWebSockets.js
+- SQLite
+- Prisma ORM
+- Cloudinary
 
-## Description
+## Architecture
+&nbsp; &nbsp; &nbsp; &nbsp; The software architecture is just using the default Nest project structure which is Domain-Driven Design.  
+In JS/TS-land I usually choose Layered-Architecture or Domain-Driven Design because it is easy to organize and work with it. This also be affected by framework that I usually use which are ExpressJS, Hono, and NestJS.  
+&nbsp; &nbsp;&nbsp;&nbsp; Layered-Architecture is traditional architecture especially in JavaScript world. For instance the architecture for this approach is organizing project with directories like (1) routers; (2) controllers; (3) services; (4) models; (5) utils; etc...  
+&nbsp;&nbsp;&nbsp;&nbsp; Domain-Driven Design is architecture for organizing project by the entity (table) in database. The easy example is like what NestJS done so each entity will have controller, service, etc itself
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+With ExpressJS and Hono I can choose whatever architecture I want to use like Domain-Driven or Clean Architecture. While in NestJS I am not often to use it and I haven't done doing large project so I just stick with the default architecture.
 
-## Installation
+## Entity Database
+### User
+model User {  
+&nbsp;&nbsp; &nbsp;   id Int @default(autoincrement()) @id  
+ &nbsp;&nbsp; &nbsp; name String   
+ &nbsp;&nbsp; &nbsp; email String @unique  
+ &nbsp;&nbsp; &nbsp; password String  
+ &nbsp;&nbsp; &nbsp; avatar String  
+ &nbsp;&nbsp; &nbsp; created_at DateTime  
+ &nbsp;&nbsp; &nbsp; userOne Conversation[] @relation("user_one")  
+ &nbsp;&nbsp; &nbsp; userTwo Conversation[] @relation("user_two")  
 
-```bash
-$ npm install
-```
+ &nbsp;&nbsp; &nbsp; sender Message[] @relation("sender")  
+ &nbsp;&nbsp; &nbsp; receiver Message[] @relation("receiver")  
+}
 
-## Running the app
+### Conversation
+model Conversation {  
+  &nbsp;&nbsp; &nbsp;  id String @unique  
+  &nbsp;&nbsp; &nbsp;  userOneId Int  
+  &nbsp;&nbsp; &nbsp;  userOne User @relation(name:"user_one", fields: [userOneId], references: [id], onDelete: Cascade)  
+  &nbsp;&nbsp; &nbsp;  userTwoId Int  
+  &nbsp;&nbsp; &nbsp;  userTwo User @relation(name: "user_two", fields: [userTwoId], references: [id], onDelete: Cascade)  
+  &nbsp;&nbsp; &nbsp;  messages Message[] @relation("chat")  
 
-```bash
-# development
-$ npm run start
+  &nbsp;&nbsp; &nbsp;  @@id([id, userOneId, userTwoId])  
+}
 
-# watch mode
-$ npm run start:dev
 
-# production mode
-$ npm run start:prod
-```
+### Message
+model Message {  
+   &nbsp;&nbsp; &nbsp; id Int @default(autoincrement()) @id  
+   &nbsp;&nbsp; &nbsp; senderId Int  
+   &nbsp;&nbsp; &nbsp; sender User @relation(name: "sender", fields: [senderId], references: [id], onDelete: Cascade)  
+   &nbsp;&nbsp; &nbsp; receiverId Int  
+   &nbsp;&nbsp; &nbsp; receiver User @relation(name: "receiver", fields: [receiverId], references: [id], onDelete: Cascade)  
+   &nbsp;&nbsp; &nbsp; message String  
+   &nbsp;&nbsp; &nbsp; edited Boolean @default(false)  
+   &nbsp;&nbsp; &nbsp; unread Boolean @default(true)  
+   &nbsp;&nbsp; &nbsp; fileUrl String?  
+   &nbsp;&nbsp; &nbsp; filePublicId String?  
+   &nbsp;&nbsp; &nbsp; fileName String?  
+   &nbsp;&nbsp; &nbsp; fileType String?  
+   &nbsp;&nbsp; &nbsp; created_at DateTime  
+   &nbsp;&nbsp; &nbsp; conversationId String  
+   &nbsp;&nbsp; &nbsp; conversation Conversation @relation(name: "chat", fields: [conversationId], references: [id], onDelete: Cascade)  
+}
 
-## Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+## Endpoint
+You can use my Postman collection to test this API. I have two Postman collection one for API endpoint and another one is for WebSocket listener.

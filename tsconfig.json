@@ -24,6 +24,7 @@
       {
         "transform": "typia/lib/transform"
       }
-    ]
+    ],
+    "typeRoots": ["./types"]
   }
 }

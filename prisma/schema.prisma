@@ -20,20 +20,20 @@ model User {
   password String
   avatar String
   created_at DateTime
-  userOne Conversation[] @relation("user_one")
-  userTwo Conversation[] @relation("user_two")
+  userOne Conversation[] @relation(name: "user_one")
+  userTwo Conversation[] @relation(name: "user_two")
 
-  sender Message[] @relation("sender")
-  receiver Message[] @relation("receiver")
+  sender Message[] @relation(name: "sender")
+  receiver Message[] @relation(name: "receiver")
 }
 
 model Conversation {
   id String @unique
   userOneId Int
-  userOne User @relation(name:"user_one", fields: [userOneId], references: [id])
+  userOne User @relation(name:"user_one", fields: [userOneId], references: [id], onDelete: Cascade)
   userTwoId Int
-  userTwo User @relation(name: "user_two", fields: [userTwoId], references: [id])
-  messages Message[] @relation("chat")
+  userTwo User @relation(name: "user_two", fields: [userTwoId], references:[id], onDelete: Cascade)
+  messages Message[] @relation(name: "chat")
 
   @@id([id, userOneId, userTwoId])
 }
@@ -41,9 +41,9 @@ model Conversation {
 model Message {
   id Int @default(autoincrement()) @id
   senderId Int
-  sender User @relation(name: "sender", fields: [senderId], references: [id])
+  sender User @relation(name: "sender", fields: [senderId], references: [id],onDelete: Cascade)
   receiverId Int
-  receiver User @relation(name: "receiver", fields: [receiverId], references: [id])
+  receiver User @relation(name: "receiver", fields: [receiverId], references:[id], onDelete: Cascade)
   message String
   edited Boolean @default(false)
   unread Boolean @default(true)
@@ -53,5 +53,5 @@ model Message {
   fileType String?
   created_at DateTime
   conversationId String
-  conversation Conversation @relation(name: "chat", fields: [conversationId], references: [id])
+  conversation Conversation @relation(name: "chat", fields: [conversationId],references: [id], onDelete: Cascade)
 }
