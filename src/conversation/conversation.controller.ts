@@ -246,6 +246,7 @@ export class ConversationController {
 				typia.json.stringify({
 					action: "edited",
 					senderId: req.user.userId,
+					message: validationResult.data.message,
 					messageId: result.id,
 				}),
 			)
