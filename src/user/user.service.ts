@@ -164,28 +164,14 @@ export class UserService {
 
 	public async delete(userId: number): Promise<boolean> {
 		try {
-			const messages = await this.prisma.message.findMany({
-				where: {
-					OR: [
-						{
-							senderId: userId,
-						},
-						{
-							receiverId: userId,
-						},
-					],
-				},
-				select: {
-					filePublicId: true,
-				},
-			})
-			messages.forEach((message) => {
-				if (message.filePublicId) {
-					cloudinary.uploader.destroy(message.filePublicId, {
-						invalidate: true,
-					})
-				}
-			})
+			cloudinary.api
+				.delete_resources_by_prefix("uploads/" + userId.toString())
+				.then(() =>
+					cloudinary.api.delete_folder(
+						"uploads/" + userId.toString(),
+					),
+				)
+
 			return (
 				(await this.prisma.user.delete({
 					where: {

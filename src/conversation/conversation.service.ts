@@ -205,11 +205,12 @@ export class ConversationService {
 	public async insert(
 		conversationId: string,
 		data: InsertMessageDTO,
+		senderId: number,
 	): Promise<Message> {
 		try {
 			const message = await this.prisma.message.create({
 				data: {
-					senderId: parseInt(data.senderId),
+					senderId: senderId,
 					receiverId: parseInt(data.receiverId),
 					message: data.message ?? "",
 					created_at: new Date().toISOString(),
