@@ -6,13 +6,11 @@ export type InsertMessageDTO = {
 	fileName?: string
 	filePublicId?: string
 	fileType?: string
-	senderId: string
 	receiverId: string
 }
 
 export type EditMessageDTO = {
 	message: string
-	senderId: number
 	receiverId: number
 }
 

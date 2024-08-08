@@ -32,7 +32,6 @@ import {
 } from "cloudinary"
 import { AuthGuard } from "src/auth/auth.guard"
 import { UserService } from "src/user/user.service"
-import { Readable } from "stream"
 
 @Controller("conversation")
 @UseGuards(AuthGuard)
@@ -145,31 +144,25 @@ export class ConversationController {
 			}
 
 			if (file) {
-				async function uploadStream(
-					buffer: Buffer,
-				): Promise<UploadApiResponse | UploadApiErrorResponse> {
-					return new Promise<
-						UploadApiResponse | UploadApiErrorResponse
-					>((res, rej) => {
-						const theTransformStream =
-							cloudinary.uploader.upload_stream(
-								{
-									folder: "uploads",
-								},
-								(
-									err: UploadApiErrorResponse,
-									result: UploadApiResponse,
-								) => {
-									if (err) return rej(err)
-									res(result)
-								},
-							)
+				const uploadResult = await new Promise<
+					UploadApiResponse | UploadApiErrorResponse
+				>((resolve, rej) => {
+					cloudinary.uploader
+						.upload_stream(
+							{
+								folder: "uploads/" + req.user.userId.toString(),
+							},
+							(
+								err: UploadApiErrorResponse,
+								result: UploadApiResponse,
+							) => {
+								if (err) return rej(err)
+								return resolve(result)
+							},
+						)
+						.end(file.buffer)
+				})
 
-						Readable.from(buffer).pipe(theTransformStream)
-					})
-				}
-
-				const uploadResult = await uploadStream(file.buffer)
 				if (!uploadResult.public_id) {
 					throw new InternalServerErrorException(
 						"File upload error. Try again.",
@@ -182,10 +175,10 @@ export class ConversationController {
 				data.fileType = uploadResult.format
 			}
 
-			data.senderId = req.user.userId.toString()
 			const result = await this.conversationSvc.insert(
 				conversationId,
 				data,
+				req.user.userId,
 			)
 
 			uws.publish(

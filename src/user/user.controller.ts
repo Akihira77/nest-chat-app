@@ -231,23 +231,10 @@ export class UserController {
 	}
 
 	@UseGuards(AuthGuard)
-	@Delete(":userId")
-	public async delete(
-		@Req() req: any,
-		@Param("userId") userId: string,
-		@Res() res: Response,
-	) {
+	@Delete()
+	public async delete(@Req() req: any, @Res() res: Response) {
 		try {
-			const user = await this.userSvc.findUserById(parseInt(userId))
-			if (!user) {
-				throw new NotFoundException("user did not found")
-			}
-
-			if (req.user.userId !== user.id) {
-				throw new BadRequestException("invalid credentials")
-			}
-
-			const result = await this.userSvc.delete(parseInt(userId))
+			const result = await this.userSvc.delete(req.user.userId)
 			if (!result) {
 				throw new InternalServerErrorException()
 			}
